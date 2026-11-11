@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teamux Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="settings-container">
+    <header class="settings-header">
+      <h2>Teamux Preferences</h2>
+      <p>Configure Linux integration, Teams account, and display options</p>
+    </header>
+
+    <main class="settings-content">
+      <section class="section">
+        <h3>Teams Account Edition</h3>
+        <div class="form-group">
+          <label for="teamsUrl">Teams Environment:</label>
+          <select id="teamsUrl" class="input">
+            <option value="https://teams.microsoft.com/v2/">Work / School (New Teams v2)</option>
+            <option value="https://teams.live.com/">Personal / Family (Teams Live)</option>
+            <option value="https://teams.microsoft.com/">Classic Teams (Legacy)</option>
+          </select>
+          <span class="field-hint">The modern Teams v2 is recommended for Linux Wayland/PipeWire screen sharing.</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>Window & System Tray</h3>
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="closeToTray">
+            <span>Keep running in system tray when window is closed</span>
+          </label>
+        </div>
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="minimizeToTray">
+            <span>Minimize directly to system tray</span>
+          </label>
+        </div>
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="startMinimized">
+            <span>Start minimized on system boot</span>
+          </label>
+        </div>
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="enableUnreadBadges">
+            <span>Show unread message badge count in tray & dock</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>Linux Hardware & Display</h3>
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="hardwareAcceleration">
+            <span>Enable GPU Hardware Acceleration (VA-API / WebGL)</span>
+          </label>
+          <span class="field-hint">Required for background blur and hardware-accelerated video decoding. Requires restart.</span>
+        </div>
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="forceWayland">
+            <span>Force native Wayland platform (instead of auto-detect)</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>Session & Storage</h3>
+        <div class="button-row">
+          <button id="btnClearCache" class="btn btn-warning" type="button">Clear Cache & Reset Session</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="settings-footer">
+      <div id="status-msg" class="status-msg"></div>
+      <div class="actions">
+        <button id="btnCancel" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="btnSave" class="btn btn-primary" type="button">Save & Apply</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

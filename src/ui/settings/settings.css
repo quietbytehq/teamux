@@ -1,0 +1,178 @@
+/* src/ui/settings/settings.css */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #18181b;
+  color: #f4f4f5;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.settings-header {
+  padding: 18px 24px 14px 24px;
+  background-color: #202024;
+  border-bottom: 1px solid #2e2e33;
+}
+
+.settings-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.settings-header p {
+  font-size: 13px;
+  color: #a1a1aa;
+}
+
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 18px;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #c7d2fe;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: #e4e4e7;
+}
+
+.input {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  color: #f4f4f5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #6366f1;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: #71717a;
+  margin-top: 4px;
+  display: block;
+}
+
+.checkbox-group {
+  margin-bottom: 10px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  cursor: pointer;
+  color: #e4e4e7;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.settings-footer {
+  padding: 14px 24px;
+  background-color: #202024;
+  border-top: 1px solid #2e2e33;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-msg {
+  font-size: 12.5px;
+  color: #10b981;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #e4e4e7;
+}
+
+.btn-secondary:hover {
+  background: #3f3f46;
+}
+
+.btn-primary {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: #4f46e5;
+}
+
+.btn-warning {
+  background: #451a1a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+.btn-warning:hover {
+  background: #7f1d1d;
+  color: #ffffff;
+}

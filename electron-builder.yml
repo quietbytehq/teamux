@@ -1,0 +1,66 @@
+appId: uk.quietbytehq.teamux
+productName: Teamux
+artifactName: "${name}-v${version}-linux-${arch}.${ext}"
+
+directories:
+  output: dist
+  buildResources: assets
+
+files:
+  - "src/**/*"
+  - "assets/**/*"
+  - "package.json"
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+    - target: rpm
+      arch:
+        - x64
+    - target: pacman
+      arch:
+        - x64
+    - target: tar.gz
+      arch:
+        - x64
+  maintainer: QuietByte <hello@quietbytehq.uk>
+  syncDesktopName: true
+  category: Network
+  icon: assets/icons
+  executableName: teamux
+  synopsis: Unofficial Microsoft Teams desktop client for Linux with native Wayland, PipeWire screen sharing, and camera support.
+  description: |
+    Teamux is an open-source unofficial Microsoft Teams desktop client tailored specifically for Linux.
+    It solves screen sharing and camera permissions across Wayland and X11 via PipeWire and
+    xdg-desktop-portal, featuring system tray integration, unread badge alerts, and multi-distro packages.
+
+deb:
+  packageCategory: net
+  priority: optional
+  depends:
+    - xdg-utils
+    - libnotify4
+    - libsecret-1-0
+
+rpm:
+  category: Applications/Internet
+  depends:
+    - xdg-utils
+    - libnotify
+    - libsecret
+
+pacman:
+  depends:
+    - xdg-utils
+    - libnotify
+    - libsecret
+
+appImage:
+  category: Network

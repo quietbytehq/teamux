@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Teamux
+Comment=Microsoft Teams for Linux with native Wayland, PipeWire, and Screen Sharing support
+GenericName=Team Collaboration & Video Conferencing
+Exec=teamux %U
+Terminal=false
+Type=Application
+Icon=teamux
+StartupWMClass=teamux
+Categories=Network;InstantMessaging;Chat;VideoConference;AudioVideo;
+MimeType=x-scheme-handler/msteams;x-scheme-handler/teamux;
+Keywords=teams;chat;meeting;video;audio;conference;screen;share;wayland;pipewire;
+X-PulseAudio-Properties=media.role=phone

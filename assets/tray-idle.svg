@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Simplified crisp monochrome glyph for Linux System Tray -->
+  <rect x="8" y="8" width="48" height="48" rx="12" fill="#ffffff" fill-opacity="0.9" />
+  <path d="M22 22 L42 22 M32 22 L32 42" stroke="#18181b" stroke-width="6" stroke-linecap="round" />
+</svg>

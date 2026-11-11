@@ -1,0 +1,38 @@
+{
+  "name": "teamux",
+  "productName": "Teamux",
+  "desktopName": "teamux.desktop",
+  "version": "0.1.0",
+  "description": "Unofficial Microsoft Teams desktop client for Linux with native Wayland, PipeWire screen sharing, and camera support.",
+  "main": "src/main/index.js",
+  "author": "QuietByte <hello@quietbytehq.uk>",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/quietbytehq/teamux",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quietbytehq/teamux.git"
+  },
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --linux AppImage deb tar.gz",
+    "dist:deb": "electron-builder --linux deb",
+    "dist:appimage": "electron-builder --linux AppImage",
+    "dist:tar": "electron-builder --linux tar.gz"
+  },
+  "keywords": [
+    "teams",
+    "microsoft-teams",
+    "linux",
+    "wayland",
+    "pipewire",
+    "screen-sharing",
+    "webrtc",
+    "electron",
+    "quietbyte"
+  ],
+  "devDependencies": {
+    "electron": "^45.3.0",
+    "electron-builder": "^26.18.0"
+  }
+}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Share your screen or window - Teamux</title>
+  <link rel="stylesheet" href="picker.css">
+</head>
+<body>
+  <div class="picker-container">
+    <header class="picker-header">
+      <h2>Choose what to share</h2>
+      <p class="subtitle">Select a screen or application window to present in Microsoft Teams</p>
+      <div class="tabs">
+        <button id="tab-screens" class="tab active" type="button">Entire Screen</button>
+        <button id="tab-windows" class="tab" type="button">Application Windows</button>
+      </div>
+    </header>
+
+    <main class="sources-viewport">
+      <div id="sources-grid" class="sources-grid">
+        <div class="loading">Discovering screens and windows...</div>
+      </div>
+    </main>
+
+    <footer class="picker-footer">
+      <div class="hint">Double-click to share directly</div>
+      <div class="actions">
+        <button id="btn-cancel" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="btn-share" class="btn btn-primary" type="button" disabled>Share</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="picker.js"></script>
+</body>
+</html>

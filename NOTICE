@@ -1,0 +1,27 @@
+Teamux
+Copyright 2026 QuietByte
+
+This product includes software developed by QuietByte (https://quietbytehq.uk).
+
+========================================================================
+Third-Party Software and Asset Attributions
+========================================================================
+
+1. Electron
+   License: MIT
+   Copyright (c) OpenJS Foundation and Electron contributors
+   Website: https://www.electronjs.org/
+
+2. Chromium
+   License: BSD-3-Clause / LGPL
+   Copyright (c) The Chromium Authors
+   Website: https://www.chromium.org/
+
+3. Linux Mascot (Tux) Concept
+   Original Tux concept created by Larry Ewing using GIMP.
+   The Tux mascot image is freely usable under permission granted by Larry Ewing.
+
+4. Microsoft Teams
+   Microsoft and Microsoft Teams are registered trademarks of Microsoft Corporation.
+   Teamux is an independent open-source project and is not affiliated with,
+   sponsored, or endorsed by Microsoft Corporation.
