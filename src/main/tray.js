@@ -7,36 +7,41 @@ const path = require('path');
 let tray = null;
 let currentUnread = 0;
 
-function createTray(mainWindow, openSettings) {
+function createTray(mainWindow, openSettings, bringAllToFront) {
   const assetsDir = path.join(__dirname, '../../assets');
   const iconPath = path.join(assetsDir, 'tray-idle.png');
 
   tray = new Tray(iconPath);
   tray.setToolTip('Teamux - Microsoft Teams for Linux');
 
-  updateContextMenu(mainWindow, openSettings);
+  updateContextMenu(mainWindow, openSettings, bringAllToFront);
 
   tray.on('click', () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    if (mainWindow.isVisible() && !mainWindow.isMinimized()) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
-      mainWindow.focus();
+    if (typeof bringAllToFront === 'function') {
+      bringAllToFront();
+    } else if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isVisible() && !mainWindow.isMinimized()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
     }
   });
 
   return tray;
 }
 
-function updateContextMenu(mainWindow, openSettings) {
+function updateContextMenu(mainWindow, openSettings, bringAllToFront) {
   if (!tray) return;
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show Teamux',
+      label: 'Show Teamux (Bring All to Front)',
       click: () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
+        if (typeof bringAllToFront === 'function') {
+          bringAllToFront();
+        } else if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.show();
           mainWindow.focus();
         }
@@ -87,7 +92,7 @@ function updateContextMenu(mainWindow, openSettings) {
   tray.setContextMenu(contextMenu);
 }
 
-function setTrayUnreadCount(count, mainWindow, openSettings) {
+function setTrayUnreadCount(count, mainWindow, openSettings, bringAllToFront) {
   currentUnread = count;
   if (!tray) return;
 
@@ -100,7 +105,7 @@ function setTrayUnreadCount(count, mainWindow, openSettings) {
     : 'Teamux - Microsoft Teams for Linux';
   tray.setToolTip(tip);
 
-  updateContextMenu(mainWindow, openSettings);
+  updateContextMenu(mainWindow, openSettings, bringAllToFront);
 }
 
 module.exports = {

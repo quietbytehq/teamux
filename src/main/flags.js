@@ -23,10 +23,11 @@ function configureAppFlags(store) {
     app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
   }
 
-  // Enable PipeWire WebRTC screen capture (fixes black screen / empty share list on Wayland)
+  // Enable PipeWire WebRTC screen capture and audio loopback for screen sharing sound
   const features = [
     'WebRTCPipeWireCapturer',
-    'WaylandWindowDecorations'
+    'WaylandWindowDecorations',
+    'PulseaudioLoopbackForCast'
   ];
 
   app.commandLine.appendSwitch('enable-features', features.join(','));

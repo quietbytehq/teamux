@@ -32,7 +32,8 @@ function setupMediaHandlers(session, getMainWindow) {
         const sources = await desktopCapturer.getSources({ types: ['screen'] });
 
         if (sources && sources.length > 0) {
-          callback({ video: sources[0] });
+          // Provide system audio loopback so video audio / computer sound is streamed to participants
+          callback({ video: sources[0], audio: 'loopback' });
         } else {
           callback();
         }
@@ -81,7 +82,7 @@ function setupMediaHandlers(session, getMainWindow) {
       const selected = sources.find(s => s.id === sourceId);
 
       if (selected) {
-        activePickerCallback({ video: selected });
+        activePickerCallback({ video: selected, audio: 'loopback' });
       } else {
         activePickerCallback();
       }

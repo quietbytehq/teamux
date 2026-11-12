@@ -3,8 +3,8 @@
 
 const { app, Menu, shell, dialog } = require('electron');
 
-function buildAppMenu(mainWindow, openSettings) {
-  const isMac = process.platform === 'darwin';
+function buildAppMenu(mainWindow, openSettings, windowActions = {}) {
+  const { bringAllToFront, resetPosition } = windowActions;
 
   const template = [
     {
@@ -58,6 +58,41 @@ function buildAppMenu(mainWindow, openSettings) {
         { role: 'togglefullscreen' },
         { type: 'separator' },
         { role: 'toggleDevTools' }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        {
+          label: 'Bring All Windows to Front',
+          accelerator: 'CmdOrCtrl+Shift+B',
+          click: () => {
+            if (typeof bringAllToFront === 'function') {
+              bringAllToFront();
+            }
+          }
+        },
+        {
+          label: 'Reset Window Position & Size',
+          accelerator: 'CmdOrCtrl+Alt+R',
+          click: () => {
+            if (typeof resetPosition === 'function') {
+              resetPosition();
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Toggle Always on Top',
+          type: 'checkbox',
+          checked: false,
+          click: (menuItem) => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.setAlwaysOnTop(menuItem.checked);
+            }
+          }
+        },
+        { role: 'minimize' }
       ]
     },
     {
