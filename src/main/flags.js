@@ -1,5 +1,5 @@
 // src/main/flags.js
-// Linux, Wayland, PipeWire, and GPU Hardware Acceleration switches
+// Linux, Wayland, PipeWire, GPU Acceleration, and Resource Optimization switches
 
 const { app } = require('electron');
 
@@ -13,6 +13,7 @@ function configureAppFlags(store) {
     // Hardware acceleration optimization for Linux
     app.commandLine.appendSwitch('ignore-gpu-blocklist');
     app.commandLine.appendSwitch('enable-gpu-rasterization');
+    app.commandLine.appendSwitch('enable-zero-copy', 'false');
   }
 
   // Ozone Platform hint (Wayland vs X11)
@@ -23,18 +24,45 @@ function configureAppFlags(store) {
     app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
   }
 
-  // Enable PipeWire WebRTC screen capture and audio loopback for screen sharing sound
-  const features = [
+  // -----------------------------------------------------------
+  // Memory & Resource Optimization Switches
+  // -----------------------------------------------------------
+  // 1. Limit V8 heap space so garbage collection runs aggressively before memory balloons
+  app.commandLine.appendSwitch('js-flags', '--max-old-space-size=512 --optimize-for-size');
+
+  // 2. Limit maximum renderer processes (prevents Teams micro-frontends from spawning 8+ renderers)
+  app.commandLine.appendSwitch('renderer-process-limit', '4');
+
+  // 3. Cap in-memory and disk cache sizes to avoid unbounded growth
+  app.commandLine.appendSwitch('disk-cache-size', '134217728'); // 128 MB max
+  app.commandLine.appendSwitch('media-cache-size', '67108864'); // 64 MB max
+
+  // 4. Disable unnecessary background Chromium subsystems
+  app.commandLine.appendSwitch('disable-breakpad');
+  app.commandLine.appendSwitch('disable-component-update');
+  app.commandLine.appendSwitch('disable-domain-reliability');
+  app.commandLine.appendSwitch('disable-sync');
+  app.commandLine.appendSwitch('disable-speech-api');
+  app.commandLine.appendSwitch('disable-speech-synthesis-api');
+
+  // 5. Features to enable / disable for low footprint and fast media
+  const enableFeatures = [
     'WebRTCPipeWireCapturer',
     'WaylandWindowDecorations',
-    'PulseaudioLoopbackForCast'
+    'PulseaudioLoopbackForCast',
+    'CanvasOopRasterization' // Off-process canvas rasterization on GPU saves CPU
   ];
 
-  app.commandLine.appendSwitch('enable-features', features.join(','));
-  app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer');
+  const disableFeatures = [
+    'MediaRouter',
+    'Translate',
+    'AutofillServerCommunication',
+    'OptimizationHints'
+  ];
 
-  // Disable MediaRouter to prevent mDNS discovery hangs when leaving calls
-  app.commandLine.appendSwitch('disable-features', 'MediaRouter');
+  app.commandLine.appendSwitch('enable-features', enableFeatures.join(','));
+  app.commandLine.appendSwitch('disable-features', disableFeatures.join(','));
+  app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer');
 
   // Audio / Media auto-play policy for uninterrupted calls
   app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');

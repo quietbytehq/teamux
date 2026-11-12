@@ -91,19 +91,31 @@ if (origGetUserMedia) {
     // 3. Create offscreen canvas for real-time frame processing
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: false });
+    if (ctx) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'medium';
+    }
 
-    const width = rawVideoTrack.getSettings()?.width || 1280;
-    const height = rawVideoTrack.getSettings()?.height || 720;
+    const width = Math.min(1280, rawVideoTrack.getSettings()?.width || 1280);
+    const height = Math.min(720, rawVideoTrack.getSettings()?.height || 720);
     canvas.width = width;
     canvas.height = height;
 
+    let cachedVignette = null;
+    let vignetteW = 0;
+    let vignetteH = 0;
+
     // 4. Processing Render Loop (30 FPS)
     const renderTimer = setInterval(() => {
-      if (video.readyState < 2) return;
+      // Resource Saver: Skip all rendering if video is not ready or user muted video
+      if (video.readyState < 2 || !rawVideoTrack.enabled || rawVideoTrack.readyState === 'ended') {
+        return;
+      }
 
       if (canvas.width !== video.videoWidth && video.videoWidth > 0) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+        cachedVignette = null; // Rebuild vignette on resize
       }
 
       const isBeautyActive = studioState.beautyEnabled && !studioState.isComparing;
@@ -120,8 +132,6 @@ if (origGetUserMedia) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         // Step B: Edge-Preserved Soft-Focus Skin Smoothing Overlay
-        // Uses an optical soft-focus blending technique to smooth skin and imperfections
-        // while preserving sharp edge contrast on eyes, lips, and hair.
         const levelNorm = studioState.beautyLevel / 100;
         const blurRadius = Math.max(2, Math.round(levelNorm * 7)); // 2px to 7px
         const overlayAlpha = Math.min(0.55, 0.15 + (levelNorm * 0.38)); // 15% to 53% opacity
@@ -130,15 +140,19 @@ if (origGetUserMedia) {
         ctx.globalAlpha = overlayAlpha;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Step C: Portrait Focus / Backdrop Vignette (Custom Backdrop lighting)
+        // Step C: Portrait Focus / Backdrop Vignette (Cached gradient)
         if (studioState.vignetteEnabled) {
-          const radGrad = ctx.createRadialGradient(
-            canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.35,
-            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.75
-          );
-          radGrad.addColorStop(0, 'rgba(0,0,0,0)');
-          radGrad.addColorStop(1, 'rgba(0,0,0,0.50)');
-          ctx.fillStyle = radGrad;
+          if (!cachedVignette || vignetteW !== canvas.width || vignetteH !== canvas.height) {
+            vignetteW = canvas.width;
+            vignetteH = canvas.height;
+            cachedVignette = ctx.createRadialGradient(
+              vignetteW / 2, vignetteH / 2, Math.min(vignetteW, vignetteH) * 0.35,
+              vignetteW / 2, vignetteH / 2, Math.max(vignetteW, vignetteH) * 0.75
+            );
+            cachedVignette.addColorStop(0, 'rgba(0,0,0,0)');
+            cachedVignette.addColorStop(1, 'rgba(0,0,0,0.50)');
+          }
+          ctx.fillStyle = cachedVignette;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 

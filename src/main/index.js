@@ -139,11 +139,20 @@ async function createMainWindow() {
   mainWindow.on('resize', saveBounds);
   mainWindow.on('move', saveBounds);
 
+  const trimMemory = () => {
+    try {
+      if (session.defaultSession) {
+        session.defaultSession.clearCodeCaches({}).catch(() => {});
+      }
+    } catch (_) {}
+  };
+
   // Close to tray behavior
   mainWindow.on('close', (event) => {
     if (!app.isQuitting && store.get('closeToTray', true)) {
       event.preventDefault();
       mainWindow.hide();
+      trimMemory();
       return false;
     }
     saveBounds();
@@ -155,7 +164,17 @@ async function createMainWindow() {
       event.preventDefault();
       mainWindow.hide();
     }
+    trimMemory();
   });
+
+  mainWindow.on('hide', trimMemory);
+
+  // Periodic memory trim when window is not focused or is hidden
+  setInterval(() => {
+    if (mainWindow && (!mainWindow.isVisible() || mainWindow.isMinimized())) {
+      trimMemory();
+    }
+  }, 10 * 60 * 1000);
 
   mainWindow.on('closed', () => {
     allActiveWindows.delete(mainWindow);
