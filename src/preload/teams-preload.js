@@ -62,145 +62,158 @@ function stopAllStreams() {
 // -------------------------------------------------------------
 // 3. Virtual Camera Hook (getUserMedia Interceptor)
 // -------------------------------------------------------------
-if (navigator.mediaDevices) {
-  const origGetUserMedia = navigator.mediaDevices.getUserMedia?.bind(navigator.mediaDevices);
-  if (origGetUserMedia) {
-    navigator.mediaDevices.getUserMedia = async (constraints) => {
-      // If video is not requested, pass through directly
-      if (!constraints || !constraints.video) {
-        const stream = await origGetUserMedia(constraints);
-        return registerStream(stream);
-      }
+const MediaDevicesProto = typeof MediaDevices !== 'undefined' ? MediaDevices.prototype : null;
+const origGetUserMedia = MediaDevicesProto?.getUserMedia || (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices));
 
-      // 1. Acquire real webcam from hardware
-      const rawStream = await origGetUserMedia(constraints);
-      const rawVideoTrack = rawStream.getVideoTracks()[0];
-
-      if (!rawVideoTrack) {
-        return registerStream(rawStream);
-      }
-
-      // 2. Setup offscreen video element to feed canvas
-      const video = document.createElement('video');
-      video.muted = true;
-      video.playsInline = true;
-      video.srcObject = rawStream;
-      await video.play().catch(() => {});
-
-      // 3. Create offscreen canvas for real-time frame processing
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: false });
-
-      const width = rawVideoTrack.getSettings()?.width || 1280;
-      const height = rawVideoTrack.getSettings()?.height || 720;
-      canvas.width = width;
-      canvas.height = height;
-
-      // 4. Processing Render Loop (30 FPS)
-      const renderTimer = setInterval(() => {
-        if (video.readyState < 2) return;
-
-        if (canvas.width !== video.videoWidth && video.videoWidth > 0) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-        }
-
-        const isBeautyActive = studioState.beautyEnabled && !studioState.isComparing;
-
-        if (isBeautyActive) {
-          // --- BEAUTY FILTER PIPELINE ---
-          // Step A: Base Layer with Studio Lighting & Warmth
-          if (studioState.studioLightEnabled) {
-            ctx.filter = 'brightness(107%) contrast(104%) saturate(106%)';
-          } else {
-            ctx.filter = 'contrast(102%)';
-          }
-          ctx.globalAlpha = 1.0;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // Step B: Edge-Preserved Soft-Focus Skin Smoothing Overlay
-          // Uses an optical soft-focus blending technique to smooth skin and imperfections
-          // while preserving sharp edge contrast on eyes, lips, and hair.
-          const levelNorm = studioState.beautyLevel / 100;
-          const blurRadius = Math.max(2, Math.round(levelNorm * 7)); // 2px to 7px
-          const overlayAlpha = Math.min(0.55, 0.15 + (levelNorm * 0.38)); // 15% to 53% opacity
-
-          ctx.filter = `blur(${blurRadius}px)`;
-          ctx.globalAlpha = overlayAlpha;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // Step C: Portrait Focus / Backdrop Vignette (Custom Backdrop lighting)
-          if (studioState.vignetteEnabled) {
-            const radGrad = ctx.createRadialGradient(
-              canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.35,
-              canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.75
-            );
-            radGrad.addColorStop(0, 'rgba(0,0,0,0)');
-            radGrad.addColorStop(1, 'rgba(0,0,0,0.50)');
-            ctx.fillStyle = radGrad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          }
-
-          // Reset canvas context
-          ctx.filter = 'none';
-          ctx.globalAlpha = 1.0;
-        } else {
-          // --- RAW CAMERA PASSTHROUGH (Or "Hold to Compare" mode) ---
-          ctx.filter = 'none';
-          ctx.globalAlpha = 1.0;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // If user is actively holding "Compare", display temporary A/B label badge
-          if (studioState.isComparing) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-            ctx.beginPath();
-            ctx.roundRect(16, 16, 170, 36, 8);
-            ctx.fill();
-
-            ctx.font = 'bold 14px sans-serif';
-            ctx.fillStyle = '#38bdf8';
-            ctx.fillText('👁️ RAW ORIGINAL', 32, 40);
-          }
-        }
-      }, 1000 / 30);
-
-      // 5. Capture processed stream
-      const virtualStream = canvas.captureStream(30);
-      const virtualVideoTrack = virtualStream.getVideoTracks()[0];
-
-      // Clean up when virtual track is terminated
-      const stopAllWebcam = () => {
-        clearInterval(renderTimer);
-        rawStream.getTracks().forEach((t) => {
-          try { t.stop(); } catch (_) {}
-        });
-        video.srcObject = null;
-      };
-
-      const origTrackStop = virtualVideoTrack.stop.bind(virtualVideoTrack);
-      virtualVideoTrack.stop = () => {
-        stopAllWebcam();
-        origTrackStop();
-      };
-      virtualVideoTrack.addEventListener('ended', stopAllWebcam);
-
-      // Combine virtual video with real audio tracks
-      const combinedTracks = [virtualVideoTrack, ...rawStream.getAudioTracks()];
-      const outputStream = new MediaStream(combinedTracks);
-
-      studioState.activeVideoStream = outputStream;
-      showStudioWidget();
-
-      return registerStream(outputStream);
-    };
-  }
-
-  const origGetDisplayMedia = navigator.mediaDevices.getDisplayMedia?.bind(navigator.mediaDevices);
-  if (origGetDisplayMedia) {
-    navigator.mediaDevices.getDisplayMedia = async (...args) => {
-      const stream = await origGetDisplayMedia(...args);
+if (origGetUserMedia) {
+  const customGetUserMedia = async function(constraints) {
+    // If video is not requested, pass through directly
+    if (!constraints || !constraints.video) {
+      const stream = await origGetUserMedia.call(this || navigator.mediaDevices, constraints);
       return registerStream(stream);
+    }
+
+    // 1. Acquire real webcam from hardware
+    const rawStream = await origGetUserMedia.call(this || navigator.mediaDevices, constraints);
+    const rawVideoTrack = rawStream.getVideoTracks()[0];
+
+    if (!rawVideoTrack) {
+      return registerStream(rawStream);
+    }
+
+    // 2. Setup offscreen video element to feed canvas
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.srcObject = rawStream;
+    await video.play().catch(() => {});
+
+    // 3. Create offscreen canvas for real-time frame processing
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: false });
+
+    const width = rawVideoTrack.getSettings()?.width || 1280;
+    const height = rawVideoTrack.getSettings()?.height || 720;
+    canvas.width = width;
+    canvas.height = height;
+
+    // 4. Processing Render Loop (30 FPS)
+    const renderTimer = setInterval(() => {
+      if (video.readyState < 2) return;
+
+      if (canvas.width !== video.videoWidth && video.videoWidth > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+
+      const isBeautyActive = studioState.beautyEnabled && !studioState.isComparing;
+
+      if (isBeautyActive) {
+        // --- BEAUTY FILTER PIPELINE ---
+        // Step A: Base Layer with Studio Lighting & Warmth
+        if (studioState.studioLightEnabled) {
+          ctx.filter = 'brightness(107%) contrast(104%) saturate(106%)';
+        } else {
+          ctx.filter = 'contrast(102%)';
+        }
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Step B: Edge-Preserved Soft-Focus Skin Smoothing Overlay
+        // Uses an optical soft-focus blending technique to smooth skin and imperfections
+        // while preserving sharp edge contrast on eyes, lips, and hair.
+        const levelNorm = studioState.beautyLevel / 100;
+        const blurRadius = Math.max(2, Math.round(levelNorm * 7)); // 2px to 7px
+        const overlayAlpha = Math.min(0.55, 0.15 + (levelNorm * 0.38)); // 15% to 53% opacity
+
+        ctx.filter = `blur(${blurRadius}px)`;
+        ctx.globalAlpha = overlayAlpha;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Step C: Portrait Focus / Backdrop Vignette (Custom Backdrop lighting)
+        if (studioState.vignetteEnabled) {
+          const radGrad = ctx.createRadialGradient(
+            canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.35,
+            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.75
+          );
+          radGrad.addColorStop(0, 'rgba(0,0,0,0)');
+          radGrad.addColorStop(1, 'rgba(0,0,0,0.50)');
+          ctx.fillStyle = radGrad;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Reset canvas context
+        ctx.filter = 'none';
+        ctx.globalAlpha = 1.0;
+      } else {
+        // --- RAW CAMERA PASSTHROUGH (Or "Hold to Compare" mode) ---
+        ctx.filter = 'none';
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // If user is actively holding "Compare", display temporary A/B label badge
+        if (studioState.isComparing) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+          ctx.beginPath();
+          ctx.roundRect(16, 16, 170, 36, 8);
+          ctx.fill();
+
+          ctx.font = 'bold 14px sans-serif';
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillText('👁️ RAW ORIGINAL', 32, 40);
+        }
+      }
+    }, 1000 / 30);
+
+    // 5. Capture processed stream
+    const virtualStream = canvas.captureStream(30);
+    const virtualVideoTrack = virtualStream.getVideoTracks()[0];
+
+    // Clean up when virtual track is terminated
+    const stopAllWebcam = () => {
+      clearInterval(renderTimer);
+      rawStream.getTracks().forEach((t) => {
+        try { t.stop(); } catch (_) {}
+      });
+      video.srcObject = null;
     };
+
+    const origTrackStop = virtualVideoTrack.stop.bind(virtualVideoTrack);
+    virtualVideoTrack.stop = () => {
+      stopAllWebcam();
+      origTrackStop();
+    };
+    virtualVideoTrack.addEventListener('ended', stopAllWebcam);
+
+    // Combine virtual video with real audio tracks
+    const combinedTracks = [virtualVideoTrack, ...rawStream.getAudioTracks()];
+    const outputStream = new MediaStream(combinedTracks);
+
+    studioState.activeVideoStream = outputStream;
+    showStudioWidget();
+
+    return registerStream(outputStream);
+  };
+
+  if (MediaDevicesProto) {
+    MediaDevicesProto.getUserMedia = customGetUserMedia;
+  }
+  if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+    navigator.mediaDevices.getUserMedia = customGetUserMedia;
+  }
+}
+
+const origGetDisplayMedia = MediaDevicesProto?.getDisplayMedia || (typeof navigator !== 'undefined' && navigator.mediaDevices?.getDisplayMedia?.bind(navigator.mediaDevices));
+if (origGetDisplayMedia) {
+  const customGetDisplayMedia = async function(...args) {
+    const stream = await origGetDisplayMedia.apply(this || navigator.mediaDevices, args);
+    return registerStream(stream);
+  };
+  if (MediaDevicesProto) {
+    MediaDevicesProto.getDisplayMedia = customGetDisplayMedia;
+  }
+  if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+    navigator.mediaDevices.getDisplayMedia = customGetDisplayMedia;
   }
 }
 
@@ -214,10 +227,10 @@ function injectStudioUI() {
   style.id = 'teamux-studio-styles';
   style.textContent = `
     #teamux-studio-widget {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 999999;
+      position: fixed !important;
+      bottom: 24px !important;
+      right: 24px !important;
+      z-index: 2147483647 !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       user-select: none;
     }
@@ -386,11 +399,11 @@ function injectStudioUI() {
     /* Floating Active Meeting Recovery Banner */
     #teamux-call-banner {
       display: none;
-      position: fixed;
-      top: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 999998;
+      position: fixed !important;
+      top: 14px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483646 !important;
       background: rgba(15, 23, 42, 0.94);
       border: 1px solid #22c55e;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
@@ -567,18 +580,13 @@ function injectStudioUI() {
   });
 
   // Event Listeners for Studio Widget
-  const toggleBeauty = document.getElementById('teamux-toggle-beauty');
-  const levelGroup = document.getElementById('teamux-level-group');
-  const rangeLevel = document.getElementById('teamux-range-level');
-  const levelVal = document.getElementById('teamux-level-val');
-  const toggleLight = document.getElementById('teamux-toggle-light');
-  const toggleVignette = document.getElementById('teamux-toggle-vignette');
-  const btnCompare = document.getElementById('teamux-btn-compare');
-  const minBtn = document.getElementById('teamux-min-btn');
-  const card = document.getElementById('teamux-studio-card');
-  const pill = document.getElementById('teamux-studio-pill');
+  const toggleBeauty = container.querySelector('#teamux-toggle-beauty');
+  const rangeLevel = container.querySelector('#teamux-range-level');
+  const levelVal = container.querySelector('#teamux-level-val');
+  const toggleLight = container.querySelector('#teamux-toggle-light');
+  const toggleVignette = container.querySelector('#teamux-toggle-vignette');
 
-  toggleBeauty.addEventListener('change', () => {
+  toggleBeauty?.addEventListener('change', () => {
     studioState.beautyEnabled = toggleBeauty.checked;
     levelGroup.style.opacity = studioState.beautyEnabled ? '1' : '0.4';
     levelGroup.style.pointerEvents = studioState.beautyEnabled ? 'auto' : 'none';
@@ -670,6 +678,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Inject Studio Controller & Call Banner
   injectStudioUI();
+
+  // Watchdog: Ensure studio UI stays attached even if Teams navigates or re-renders DOM
+  setInterval(() => {
+    if (document.body && !document.getElementById('teamux-studio-widget')) {
+      injectStudioUI();
+    }
+  }, 1500);
 
   // Monitor document.title to detect unread badges (e.g., "(3) Microsoft Teams")
   const titleElement = document.querySelector('title');
