@@ -416,72 +416,143 @@ function injectStudioUI() {
   `;
   document.head.appendChild(style);
 
-  // Widget HTML
+  // Safe helpers to build DOM without innerHTML (avoids Trusted Types / TrustedHTML violations)
+  function createSwitch(id, isChecked) {
+    const label = document.createElement('label');
+    label.className = 'teamux-switch';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = id;
+    input.checked = !!isChecked;
+    const slider = document.createElement('span');
+    slider.className = 'teamux-slider';
+    label.appendChild(input);
+    label.appendChild(slider);
+    return label;
+  }
+
+  function createToggleRow(labelText, switchId, isChecked) {
+    const row = document.createElement('div');
+    row.className = 'teamux-toggle-row';
+    const span = document.createElement('span');
+    span.textContent = labelText;
+    const sw = createSwitch(switchId, isChecked);
+    row.appendChild(span);
+    row.appendChild(sw);
+    return row;
+  }
+
+  // 1. Studio Widget Container
   const container = document.createElement('div');
   container.id = 'teamux-studio-widget';
-  container.innerHTML = `
-    <div id="teamux-studio-card" class="teamux-studio-card">
-      <div class="teamux-studio-header">
-        <div class="teamux-studio-title">✨ Teamux Studio</div>
-        <button id="teamux-min-btn" class="teamux-studio-btn-min" type="button" title="Minimize">−</button>
-      </div>
-      <div class="teamux-studio-body">
-        <div class="teamux-toggle-row">
-          <span>Beauty Filter</span>
-          <label class="teamux-switch">
-            <input type="checkbox" id="teamux-toggle-beauty" ${studioState.beautyEnabled ? 'checked' : ''}>
-            <span class="teamux-slider"></span>
-          </label>
-        </div>
 
-        <div class="teamux-range-group" id="teamux-level-group" style="${studioState.beautyEnabled ? '' : 'opacity:0.4; pointer-events:none;'}">
-          <div class="teamux-range-label">
-            <span>Smoothness</span>
-            <span id="teamux-level-val">${studioState.beautyLevel}%</span>
-          </div>
-          <input type="range" id="teamux-range-level" class="teamux-range-input" min="10" max="100" value="${studioState.beautyLevel}">
-        </div>
+  // 2. Studio Card
+  const card = document.createElement('div');
+  card.id = 'teamux-studio-card';
+  card.className = 'teamux-studio-card';
 
-        <div class="teamux-toggle-row">
-          <span>Studio Lighting</span>
-          <label class="teamux-switch">
-            <input type="checkbox" id="teamux-toggle-light" ${studioState.studioLightEnabled ? 'checked' : ''}>
-            <span class="teamux-slider"></span>
-          </label>
-        </div>
+  // Header
+  const header = document.createElement('div');
+  header.className = 'teamux-studio-header';
+  const title = document.createElement('div');
+  title.className = 'teamux-studio-title';
+  title.textContent = '✨ Teamux Studio';
+  const minBtn = document.createElement('button');
+  minBtn.id = 'teamux-min-btn';
+  minBtn.className = 'teamux-studio-btn-min';
+  minBtn.type = 'button';
+  minBtn.title = 'Minimize';
+  minBtn.textContent = '−';
+  header.appendChild(title);
+  header.appendChild(minBtn);
+  card.appendChild(header);
 
-        <div class="teamux-toggle-row">
-          <span>Portrait Focus (Vignette)</span>
-          <label class="teamux-switch">
-            <input type="checkbox" id="teamux-toggle-vignette" ${studioState.vignetteEnabled ? 'checked' : ''}>
-            <span class="teamux-slider"></span>
-          </label>
-        </div>
+  // Body
+  const body = document.createElement('div');
+  body.className = 'teamux-studio-body';
 
-        <div class="teamux-hint-box">
-          💡 <strong>Custom BG & Blur:</strong> Supported natively inside Teams call under <em>More &gt; Video effects</em>.
-        </div>
+  // Beauty Filter Row
+  body.appendChild(createToggleRow('Beauty Filter', 'teamux-toggle-beauty', studioState.beautyEnabled));
 
-        <button id="teamux-btn-compare" class="teamux-btn-compare" type="button" title="Hold down to temporarily see your raw camera">
-          👁️ Hold to Compare
-        </button>
-      </div>
-    </div>
+  // Range Group (Smoothness)
+  const levelGroup = document.createElement('div');
+  levelGroup.className = 'teamux-range-group';
+  levelGroup.id = 'teamux-level-group';
+  if (!studioState.beautyEnabled) {
+    levelGroup.style.opacity = '0.4';
+    levelGroup.style.pointerEvents = 'none';
+  }
+  const labelRow = document.createElement('div');
+  labelRow.className = 'teamux-range-label';
+  const smoothLabel = document.createElement('span');
+  smoothLabel.textContent = 'Smoothness';
+  const smoothVal = document.createElement('span');
+  smoothVal.id = 'teamux-level-val';
+  smoothVal.textContent = `${studioState.beautyLevel}%`;
+  labelRow.appendChild(smoothLabel);
+  labelRow.appendChild(smoothVal);
 
-    <div id="teamux-studio-pill" class="teamux-studio-pill" title="Open Teamux Studio">
-      <span>✨</span>
-      <span>Studio</span>
-    </div>
-  `;
+  const rangeInput = document.createElement('input');
+  rangeInput.type = 'range';
+  rangeInput.id = 'teamux-range-level';
+  rangeInput.className = 'teamux-range-input';
+  rangeInput.min = '10';
+  rangeInput.max = '100';
+  rangeInput.value = String(studioState.beautyLevel);
+
+  levelGroup.appendChild(labelRow);
+  levelGroup.appendChild(rangeInput);
+  body.appendChild(levelGroup);
+
+  // Studio Lighting Row
+  body.appendChild(createToggleRow('Studio Lighting', 'teamux-toggle-light', studioState.studioLightEnabled));
+
+  // Portrait Focus Row
+  body.appendChild(createToggleRow('Portrait Focus (Vignette)', 'teamux-toggle-vignette', studioState.vignetteEnabled));
+
+  // Hint Box
+  const hintBox = document.createElement('div');
+  hintBox.className = 'teamux-hint-box';
+  hintBox.textContent = '💡 Custom BG & Blur: Supported natively in Teams meeting under More > Video effects.';
+  body.appendChild(hintBox);
+
+  // Compare Button
+  const btnCompare = document.createElement('button');
+  btnCompare.id = 'teamux-btn-compare';
+  btnCompare.className = 'teamux-btn-compare';
+  btnCompare.type = 'button';
+  btnCompare.title = 'Hold down to temporarily see your raw camera';
+  btnCompare.textContent = '👁️ Hold to Compare';
+  body.appendChild(btnCompare);
+
+  card.appendChild(body);
+  container.appendChild(card);
+
+  // Pill
+  const pill = document.createElement('div');
+  pill.id = 'teamux-studio-pill';
+  pill.className = 'teamux-studio-pill';
+  pill.title = 'Open Teamux Studio';
+  const pillIcon = document.createElement('span');
+  pillIcon.textContent = '✨';
+  const pillText = document.createElement('span');
+  pillText.textContent = 'Studio';
+  pill.appendChild(pillIcon);
+  pill.appendChild(pillText);
+  container.appendChild(pill);
+
   document.body.appendChild(container);
 
-  // Call Recovery Banner HTML
+  // 3. Call Recovery Banner
   const callBanner = document.createElement('div');
   callBanner.id = 'teamux-call-banner';
-  callBanner.innerHTML = `
-    <span>🟢 Active Call in Progress</span>
-    <span style="background:#22c55e; color:#0f172a; font-weight:700; padding:2px 8px; border-radius:12px; font-size:11px;">RETURN TO MEETING</span>
-  `;
+  const callText = document.createElement('span');
+  callText.textContent = '🟢 Active Call in Progress';
+  const callBtn = document.createElement('span');
+  callBtn.textContent = 'RETURN TO MEETING';
+  callBtn.style.cssText = 'background:#22c55e; color:#0f172a; font-weight:700; padding:2px 8px; border-radius:12px; font-size:11px;';
+  callBanner.appendChild(callText);
+  callBanner.appendChild(callBtn);
   document.body.appendChild(callBanner);
 
   // Event Listeners for Call Recovery Banner
