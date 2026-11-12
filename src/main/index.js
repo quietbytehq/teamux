@@ -114,7 +114,7 @@ async function createMainWindow() {
     autoHideMenuBar: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/teams-preload.js'),
-      contextIsolation: true,
+      contextIsolation: false,
       nodeIntegration: false,
       spellcheck: true,
       backgroundThrottling: false // Keep WebRTC active in background

@@ -60,28 +60,28 @@ Teamux provides native packages for all major Linux distributions:
 ### 1. Universal (Any Linux Distro) — AppImage
 Requires no installation or root privileges:
 ```bash
-# Download teamux-v0.1.0-linux-x86_64.AppImage from Releases
-chmod +x teamux-v0.1.0-linux-x86_64.AppImage
-./teamux-v0.1.0-linux-x86_64.AppImage
+# Download teamux-v0.2.0-linux-x86_64.AppImage from Releases
+chmod +x teamux-v0.2.0-linux-x86_64.AppImage
+./teamux-v0.2.0-linux-x86_64.AppImage
 ```
 
 ### 2. Ubuntu / Debian / Linux Mint / Pop!_OS — `.deb`
 ```bash
-sudo dpkg -i teamux-v0.1.0-linux-amd64.deb
+sudo dpkg -i teamux-v0.2.0-linux-amd64.deb
 # Or using apt:
-sudo apt install ./teamux-v0.1.0-linux-amd64.deb
+sudo apt install ./teamux-v0.2.0-linux-amd64.deb
 ```
 
 ### 3. Red Hat / Fedora / CentOS / Rocky Linux — `.rpm`
 ```bash
-sudo dnf install ./Teamux-1.0.0-x86_64.rpm
+sudo dnf install ./teamux-v0.2.0-linux-x86_64.rpm
 # Or on openSUSE:
-sudo zypper install ./Teamux-1.0.0-x86_64.rpm
+sudo zypper install ./teamux-v0.2.0-linux-x86_64.rpm
 ```
 
 ### 4. Arch Linux / Manjaro / EndeavourOS — `.pacman`
 ```bash
-sudo pacman -U Teamux-1.0.0-x86_64.pacman
+sudo pacman -U teamux-v0.2.0-linux-x86_64.pacman
 ```
 
 ---

@@ -2,7 +2,7 @@
   "name": "teamux",
   "productName": "Teamux",
   "desktopName": "teamux.desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unofficial Microsoft Teams desktop client for Linux with native Wayland, PipeWire screen sharing, and camera support.",
   "main": "src/main/index.js",
   "author": "QuietByte <hello@quietbytehq.uk>",

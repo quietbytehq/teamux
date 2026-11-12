@@ -11,6 +11,7 @@ const studioState = {
   beautyEnabled: localStorage.getItem('teamux_beauty_enabled') !== 'false', // default true
   beautyLevel: parseInt(localStorage.getItem('teamux_beauty_level') || '65', 10),
   studioLightEnabled: localStorage.getItem('teamux_light_enabled') !== 'false',
+  vignetteEnabled: localStorage.getItem('teamux_vignette_enabled') === 'true',
   isComparing: false, // when user is holding "Hold to Compare"
   activeVideoStream: null
 };
@@ -19,6 +20,7 @@ function saveStudioSettings() {
   localStorage.setItem('teamux_beauty_enabled', studioState.beautyEnabled ? 'true' : 'false');
   localStorage.setItem('teamux_beauty_level', String(studioState.beautyLevel));
   localStorage.setItem('teamux_light_enabled', studioState.studioLightEnabled ? 'true' : 'false');
+  localStorage.setItem('teamux_vignette_enabled', studioState.vignetteEnabled ? 'true' : 'false');
 }
 
 // -------------------------------------------------------------
@@ -127,6 +129,18 @@ if (navigator.mediaDevices) {
           ctx.globalAlpha = overlayAlpha;
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+          // Step C: Portrait Focus / Backdrop Vignette (Custom Backdrop lighting)
+          if (studioState.vignetteEnabled) {
+            const radGrad = ctx.createRadialGradient(
+              canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.35,
+              canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.75
+            );
+            radGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            radGrad.addColorStop(1, 'rgba(0,0,0,0.50)');
+            ctx.fillStyle = radGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
           // Reset canvas context
           ctx.filter = 'none';
           ctx.globalAlpha = 1.0;
@@ -155,11 +169,20 @@ if (navigator.mediaDevices) {
       const virtualVideoTrack = virtualStream.getVideoTracks()[0];
 
       // Clean up when virtual track is terminated
-      virtualVideoTrack.addEventListener('ended', () => {
+      const stopAllWebcam = () => {
         clearInterval(renderTimer);
-        rawStream.getTracks().forEach((t) => t.stop());
+        rawStream.getTracks().forEach((t) => {
+          try { t.stop(); } catch (_) {}
+        });
         video.srcObject = null;
-      });
+      };
+
+      const origTrackStop = virtualVideoTrack.stop.bind(virtualVideoTrack);
+      virtualVideoTrack.stop = () => {
+        stopAllWebcam();
+        origTrackStop();
+      };
+      virtualVideoTrack.addEventListener('ended', stopAllWebcam);
 
       // Combine virtual video with real audio tracks
       const combinedTracks = [virtualVideoTrack, ...rawStream.getAudioTracks()];
@@ -199,21 +222,21 @@ function injectStudioUI() {
       user-select: none;
     }
     .teamux-studio-card {
-      background: rgba(24, 24, 28, 0.94);
+      display: none;
+      background: rgba(24, 24, 28, 0.96);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(99, 102, 241, 0.4);
+      border: 1px solid rgba(99, 102, 241, 0.45);
       border-radius: 12px;
-      width: 280px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      width: 290px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.65);
       color: #f4f4f5;
       overflow: hidden;
-      display: flex;
       flex-direction: column;
       transition: all 0.2s ease;
     }
     .teamux-studio-header {
       padding: 10px 14px;
-      background: rgba(36, 36, 42, 0.85);
+      background: rgba(36, 36, 42, 0.95);
       border-bottom: 1px solid rgba(63, 63, 70, 0.5);
       display: flex;
       align-items: center;
@@ -332,21 +355,33 @@ function injectStudioUI() {
       color: white;
     }
     .teamux-studio-pill {
-      display: none;
-      background: rgba(30, 27, 75, 0.9);
-      border: 1px solid #6366f1;
+      display: flex;
+      background: rgba(30, 27, 75, 0.94);
+      border: 1px solid #818cf8;
       color: #ffffff;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
+      padding: 8px 14px;
+      border-radius: 24px;
       align-items: center;
       justify-content: center;
+      gap: 6px;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
-      font-size: 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      font-size: 13px;
+      font-weight: 600;
+      transition: transform 0.2s ease, background 0.2s;
     }
     .teamux-studio-pill:hover {
-      transform: scale(1.08);
+      background: rgba(67, 56, 202, 0.96);
+      transform: scale(1.05);
+    }
+    .teamux-hint-box {
+      font-size: 11px;
+      color: #94a3b8;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 6px;
+      padding: 6px 8px;
+      line-height: 1.4;
     }
     /* Floating Active Meeting Recovery Banner */
     #teamux-call-banner {
@@ -415,13 +450,28 @@ function injectStudioUI() {
           </label>
         </div>
 
+        <div class="teamux-toggle-row">
+          <span>Portrait Focus (Vignette)</span>
+          <label class="teamux-switch">
+            <input type="checkbox" id="teamux-toggle-vignette" ${studioState.vignetteEnabled ? 'checked' : ''}>
+            <span class="teamux-slider"></span>
+          </label>
+        </div>
+
+        <div class="teamux-hint-box">
+          💡 <strong>Custom BG & Blur:</strong> Supported natively inside Teams call under <em>More &gt; Video effects</em>.
+        </div>
+
         <button id="teamux-btn-compare" class="teamux-btn-compare" type="button" title="Hold down to temporarily see your raw camera">
           👁️ Hold to Compare
         </button>
       </div>
     </div>
 
-    <div id="teamux-studio-pill" class="teamux-studio-pill" title="Open Teamux Studio">✨</div>
+    <div id="teamux-studio-pill" class="teamux-studio-pill" title="Open Teamux Studio">
+      <span>✨</span>
+      <span>Studio</span>
+    </div>
   `;
   document.body.appendChild(container);
 
@@ -451,6 +501,7 @@ function injectStudioUI() {
   const rangeLevel = document.getElementById('teamux-range-level');
   const levelVal = document.getElementById('teamux-level-val');
   const toggleLight = document.getElementById('teamux-toggle-light');
+  const toggleVignette = document.getElementById('teamux-toggle-vignette');
   const btnCompare = document.getElementById('teamux-btn-compare');
   const minBtn = document.getElementById('teamux-min-btn');
   const card = document.getElementById('teamux-studio-card');
@@ -471,6 +522,11 @@ function injectStudioUI() {
 
   toggleLight.addEventListener('change', () => {
     studioState.studioLightEnabled = toggleLight.checked;
+    saveStudioSettings();
+  });
+
+  toggleVignette?.addEventListener('change', () => {
+    studioState.vignetteEnabled = toggleVignette.checked;
     saveStudioSettings();
   });
 
@@ -505,8 +561,14 @@ function injectStudioUI() {
 
 function showStudioWidget() {
   const widget = document.getElementById('teamux-studio-widget');
+  const card = document.getElementById('teamux-studio-card');
+  const pill = document.getElementById('teamux-studio-pill');
   if (widget) {
     widget.style.display = 'block';
+  }
+  if (card && pill) {
+    pill.style.display = 'none';
+    card.style.display = 'flex';
   }
 }
 
